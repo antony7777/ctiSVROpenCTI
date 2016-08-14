@@ -124,6 +124,7 @@
 						myAgentId = jsonObj["associateddevice"];
 						if (myAgentId) {
 							document.getElementById('txtAgentId').value = myAgentId; 
+							document.getElementById('txtPasswd').value = "*****"; 
 							document.getElementById('btnSubmitLogin').disabled = true;
 							document.getElementById('btnSubmitLogout').disabled = false;
 							document.getElementById('txtAgentId').disabled = true;
@@ -349,102 +350,6 @@
 				}));			
 			}				
 		}		
-		function pressDigitOne() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "1"
-			}));				
-		}			
-		function pressDigitTwo() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "2"
-			}));			
-		}			
-		function pressDigitThree() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "3"
-			}));			
-		}			
-		function pressDigitFour() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "4"
-			}));			
-		}			
-		function pressDigitFive() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "5"
-			}));			
-		}			
-		function pressDigitSix() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "6"
-			}));			
-		}
-		function pressDigitSeven() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "7"
-			}));			
-		}			
-		function pressDigitEight() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "8"
-			}));			
-		}			
-		function pressDigitNine() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "9"
-			}));			
-		}
-		function pressDigitAsterisk() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "*"
-			}));			
-		}			
-		function pressDigitZero() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "0"
-			}));			
-		}			
-		function pressDigitPound() {
-			webSocket.send(JSON.stringify({
-				id: MSGID_DTMF,
-				request: "dtmf",
-				extension: myExtension,
-				dtmf: "#"
-			}));			
-		}	
 		function pressHold() {
 			webSocket.send(JSON.stringify({
 				id: MSGID_HOLD,
@@ -623,11 +528,12 @@
 		});					
 	});
     </script>
+	
 	<button onclick="changeAUTO();" id="btnAuto" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >A</button>
 	<button onclick="changeMANUAL();" id="btnManual" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >M</button>
 	<button onclick="changeACW();" id="btnAcw" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >W</button>	
 	<button onclick="changeAUX();" id="btnAux" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >X</button>
-	<select id="selReasonCode" style="width:30px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+	<select id="selReasonCode" style="width:31px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
 		<option value="0">0</option>	
 		<option value="1">1</option>
 		<option value="2">2</option>
@@ -640,43 +546,32 @@
 		<option value="9">9</option>
 	</select>		
 	<form name="loginForm" id="loginForm" >
-	<label for="txtAgentId" style="position:relative;vertical-align: middle;width:40px;height:12px;font-family:Arial;font-size:12px; display: inline-block;">AgentId</label>
+	<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Agent" src="imgs/user.png">
 	<input tabindex=1 type="text" id="txtAgentId" name="txtAgentId" style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />
-	<input tabindex=3 type="submit" id="btnSubmitLogin" value="Login" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" /></br>
-	<label for="txtPasswd" style="position:relative;vertical-align: middle;width:40px;height:12px;font-family:Arial;font-size:12px;display: inline-block;">Passwd</label>
+	<input tabindex=3 type="submit" id="btnSubmitLogin" value="Login" style="width:45px;height:22px;font-family:Arial;font-size:12px;padding:0;" /></br>
+	<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Passwd" src="imgs/password.png">
 	<input tabindex=2 type="password" id="txtPasswd" name="txtPasswd" style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />
-	<input tabindex=4 type="submit" id="btnSubmitLogout" value="Logout" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" />
+	<input tabindex=4 type="submit" id="btnSubmitLogout" value="Logout" style="width:45px;height:22px;font-family:Arial;font-size:12px;padding:0;" />
 	</form>
 
 	<form name="phoneNumberForm" id="phoneNumberForm" style="border-width:thin;" >
-	<input type="submit" id="btnSubmitAnswer" value="Ans" style="position:relative;vertical-align: middle;width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" />		
-	<input type="text" id="txtPhoneNumber" name="txtPhoneNumber" style="width:68px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />
-	<input type="submit" id="btnSubmitCall" value="Call" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" /></br>
+	<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Tel" src="imgs/tel.png">
+	<input type="text" id="txtPhoneNumber" name="txtPhoneNumber" style="width:100px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" /><br>
+	<input type="submit" id="btnSubmitAnswer" value="Answer" style="position:relative;vertical-align: middle;width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" />		
+	<input type="submit" id="btnSubmitCall" value="Call" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" /></br>
 	</form>	
 	
-	<button onclick="pressHold();" id="btnHold" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >HOLD</button>
-	<button onclick="pressDigitOne();" id="btnDigitOne" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >1</button>
-	<button onclick="pressDigitTwo();" id="btnDigitTwo" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >2</button>
-	<button onclick="pressDigitThree();" id="btnDigitThree" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >3</button>	
-	<button onclick="pressHangup();" id="btnHangup" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >HUP</button>	
+	<button onclick="pressHold();" id="btnHold" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Hold</button>
+	<button onclick="pressHangup();" id="btnHangup" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Hangup</button><br>	
 	
-	<button onclick="pressRetrieve();" id="btnRetrieve" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >RETR</button>
-	<button onclick="pressDigitFour();" id="btnDigitFour" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >4</button>
-	<button onclick="pressDigitFive();" id="btnDigitFive" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >5</button>
-	<button onclick="pressDigitSix();" id="btnDigitSix" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >6</button>
-	<button onclick="pressDrop();" id="btnDrop" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >DROP</button>	
+	<button onclick="pressRetrieve();" id="btnRetrieve" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Retrieve</button>
+	<button onclick="pressDrop();" id="btnDrop" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Drop</button><br>	
 	
-	<button onclick="pressConsultation();" id="btnConsultation" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >CONS</button>
-	<button onclick="pressDigitSeven();" id="btnDigitSeven" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >7</button>
-	<button onclick="pressDigitEight();" id="btnDigitEight" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >8</button>
-	<button onclick="pressDigitNine();" id="btnDigitNine" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >9</button>	
-	<button onclick="pressReconnect();" id="btnReconnect" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >RENN</button>	
+	<button onclick="pressConsultation();" id="btnConsultation" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Consult</button>
+	<button onclick="pressReconnect();" id="btnReconnect" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Reconnect</button><br>	
 	
-	<button onclick="pressTransfer();" id="btnTransfer" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >TRNF</button>
-	<button onclick="pressDigitAsterisk();" id="btnDigitAsterisk" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >*</button>
-	<button onclick="pressDigitZero();" id="btnDigitZero" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >0</button>
-	<button onclick="pressDigitPound();" id="btnDigitPound" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >#</button>	
-	<button onclick="pressConference();" id="btnConference" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >CONF</button>
+	<button onclick="pressTransfer();" id="btnTransfer" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Trnf</button>
+	<button onclick="pressConference();" id="btnConference" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Conf</button>
 	
 </body>
 </html>
