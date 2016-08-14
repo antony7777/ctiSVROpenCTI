@@ -1,0 +1,683 @@
+<html>
+<head>
+	<!-- Imports Open CTI JavaScript library. It should point to a valid Salesforce domain. -->
+	<script src="https://ap1.salesforce.com/support/api/25.0/interaction.js"></script>
+	<script type="text/javascript">
+		var configString;
+		var wsUriA;	
+		var wsUriB; 
+		var wsUriCurrent;
+		var internationalPrefix;
+		var longDistPrefix; 
+		var outsidePrefix;
+		var webSocket; 
+		var myExtension;
+		var myAgentId;
+		var myPasswd;
+		var myAgentIdle;
+		const MSGID_GETEXTENSION = 0;
+		const MSGID_STARTMONITOR = 1; 
+		const MSGID_QUERYDEVICEINFO = 2; 
+		const MSGID_LOGIN = 3;
+		const MSGID_LOGOUT = 4; 
+		const MSGID_QUERYAGENTSTATE = 5;
+		const MSGID_CHANGEAUTO = 6;
+		const MSGID_CHANGEMANUAL = 7; 
+		const MSGID_CHANGEACW = 8;
+		const MSGID_CHANGEAUX = 9;
+		const MSGID_MAKECALL = 10; 
+		const MSGID_ANSWER = 11;
+		const MSGID_CONFERENCE = 12; 
+		const MSGID_TRANSFER = 13; 
+		const MSGID_RECONNECT = 14; 
+		const MSGID_CONSULTATION = 15; 
+		const MSGID_DROPPARTY = 16; 
+		const MSGID_RETRIEVE = 17;
+		const MSGID_HANGUP = 18;
+		const MSGID_HOLD = 19; 
+		const MSGID_DTMF = 20;
+		// Connect to ctiSVR using WebSocket interface 
+		function connectCtiSVRA() {
+			if (configString) {
+				var jsonObj = JSON.parse(configString);
+				wsUriA = jsonObj["/ServerInfo/wsURIA"];
+				wsUriB = jsonObj["/ServerInfo/wsURIB"];
+				internationalPrefix = jsonObj["/reqDialingOptions/reqInternationalPrefix"];
+				longDistPrefix = jsonObj["/reqDialingOptions/reqLongDistPrefix"];
+				outsidePrefix = jsonObj["/reqDialingOptions/reqOutsidePrefix"];
+				wsUriCurrent = wsUriA; 				
+				webSocket = new WebSocket(wsUriA);
+				webSocket.onopen = function(evt) {
+					onWebSocketOpen(evt)
+				};
+				webSocket.onclose = function(evt) {
+					onWebSocketClose(evt)
+				};
+				webSocket.onmessage = function(evt) {
+					onWebSocketMessage(evt)
+				};
+				webSocket.onerror = function(evt) {
+					onWebSocketError(evt)
+				};				
+			} else {
+				alert('Getting configString failed.');
+			}
+		};
+		function connectCtiSVRB() { 
+			if (configString) {
+				wsUriCurrent = wsUriB; 
+				webSocket = new WebSocket(wsUriB);
+				webSocket.onopen = function(evt) {
+					onWebSocketOpen(evt)
+				};
+				webSocket.onclose = function(evt) {
+					onWebSocketClose(evt)
+				};
+				webSocket.onmessage = function(evt) {
+					onWebSocketMessage(evt)
+				};
+				webSocket.onerror = function(evt) {
+					onWebSocketError(evt)
+				};				
+			} else {
+				alert('Getting configString failed.');
+			}
+		};		
+		// Callback of WebSocket onOpen
+		function onWebSocketOpen(evt) {
+			webSocket.send(JSON.stringify({
+				id: MSGID_GETEXTENSION, 
+				request: "myextension"
+			}));			
+		}
+		// Callback of WebSocket onDisconnect
+		function onWebSocketClose(evt) {
+		}
+		// Callback of WebSocket onMessage
+		function onWebSocketMessage(evt) {
+			var jsonObj = JSON.parse(evt.data);
+			if (jsonObj["msgtype"]=='response') {
+				var id = jsonObj["id"];
+				if (id==MSGID_GETEXTENSION) {
+					if (jsonObj["result"]=='success') {
+						myExtension = jsonObj["extension"];						
+						webSocket.send(JSON.stringify({
+							id: MSGID_STARTMONITOR, 
+							request: "startmonitor",
+							extension: myExtension
+						}));					
+					} else {
+						alert('SoftPhone get CTI extension failed.');
+					}
+				} else if (id==MSGID_STARTMONITOR) {
+					if (jsonObj["result"]=='success') {
+						webSocket.send(JSON.stringify({
+							id: MSGID_QUERYDEVICEINFO, 
+							request: "querydeviceinfo",
+							extension: myExtension
+						}));						
+					} else {
+						alert('SoftPhone monitor CTI extension failed.');
+					}
+				} else if (id==MSGID_QUERYDEVICEINFO) {
+					if (jsonObj["result"]=='success') {
+						myAgentId = jsonObj["associateddevice"];
+						if (myAgentId) {
+							document.getElementById('txtAgentId').value = myAgentId; 
+							document.getElementById('btnSubmitLogin').disabled = true;
+							document.getElementById('btnSubmitLogout').disabled = false;
+							document.getElementById('txtAgentId').disabled = true;
+							document.getElementById('txtPasswd').disabled = true;
+							webSocket.send(JSON.stringify({
+								id: MSGID_QUERYAGENTSTATE, 
+								request: "queryagentstate",
+								extension: myExtension
+							}));							
+						} else {
+							document.getElementById('btnSubmitLogin').disabled = false;
+							document.getElementById('btnSubmitLogout').disabled = true;
+							document.getElementById('txtAgentId').disabled = false;
+							document.getElementById('txtPasswd').disabled = false;						
+							document.getElementById('btnAuto').disabled = true;
+							document.getElementById('btnManual').disabled = true;
+							document.getElementById('btnAcw').disabled = true;
+							document.getElementById('btnAux').disabled = true;						
+							
+						}
+						// Register Click to Dial Callback 
+						sforce.interaction.cti.onClickToDial(onClickToDialCallback);
+						// Enable Click to Dial 
+						sforce.interaction.cti.enableClickToDial(enableClickToDialCallback);
+					}
+				} else if (id==MSGID_LOGIN) {
+					if (jsonObj["result"]=='success') {
+						document.getElementById('txtAgentId').value = myAgentId; 
+						document.getElementById('btnSubmitLogin').disabled = true;
+						document.getElementById('btnSubmitLogout').disabled = false;
+						document.getElementById('txtAgentId').disabled = true;
+						document.getElementById('txtPasswd').disabled = true;						
+						webSocket.send(JSON.stringify({
+							id: MSGID_QUERYAGENTSTATE, 
+							request: "queryagentstate",
+							extension: myExtension
+						}));						
+					} else {
+						myAgentId = "";
+						myPasswd = "";
+						document.getElementById('txtAgentId').value = myAgentId; 
+						document.getElementById('txtPasswd').value = myPasswd;
+						document.getElementById('btnSubmitLogin').disabled = false;
+						document.getElementById('btnSubmitLogout').disabled = true;
+						document.getElementById('txtAgentId').disabled = false;
+						document.getElementById('txtPasswd').disabled = false;							
+					}				
+				} else if (id==MSGID_LOGOUT) {
+					if (jsonObj["result"]=='success') {
+						myAgentId = "";
+						myPasswd = "";
+						document.getElementById('txtAgentId').value = myAgentId; 
+						document.getElementById('txtPasswd').value = myPasswd;
+						document.getElementById('btnSubmitLogin').disabled = false;
+						document.getElementById('btnSubmitLogout').disabled = true;
+						document.getElementById('txtAgentId').disabled = false;
+						document.getElementById('txtPasswd').disabled = false;							
+						document.getElementById('btnAuto').disabled = true;
+						document.getElementById('btnManual').disabled = true;
+						document.getElementById('btnAcw').disabled = true;
+						document.getElementById('btnAux').disabled = true;						
+					}
+				} else if (id==MSGID_QUERYAGENTSTATE) {
+					if (jsonObj["result"]=='success') {
+						// determine skill mode 
+						if (jsonObj["skillmode"]=="null") {
+							myAgentId = "";
+							myPasswd = "";
+							document.getElementById('txtAgentId').value = myAgentId; 
+							document.getElementById('txtPasswd').value = myPasswd;						
+							document.getElementById('btnSubmitLogin').disabled = false;
+							document.getElementById('btnSubmitLogout').disabled = true;
+							document.getElementById('txtAgentId').disabled = false;
+							document.getElementById('txtPasswd').disabled = false;								
+							document.getElementById('btnAuto').disabled = true;
+							document.getElementById('btnManual').disabled = true;
+							document.getElementById('btnAcw').disabled = true;
+							document.getElementById('btnAux').disabled = true;
+						} else if (jsonObj["skillmode"]=="auto") {
+							document.getElementById('btnAuto').disabled = true;
+							document.getElementById('btnManual').disabled = false;
+							document.getElementById('btnAcw').disabled = false;
+							document.getElementById('btnAux').disabled = false;						
+						} else if (jsonObj["skillmode"]=="manual") {
+							document.getElementById('btnAuto').disabled = false;
+							document.getElementById('btnManual').disabled = true;
+							document.getElementById('btnAcw').disabled = false;
+							document.getElementById('btnAux').disabled = false;								
+						} else if (jsonObj["skillmode"]=="acw") {
+							document.getElementById('btnAuto').disabled = false;
+							document.getElementById('btnManual').disabled = false;
+							document.getElementById('btnAcw').disabled = true;
+							document.getElementById('btnAux').disabled = false;								
+						} else if (jsonObj["skillmode"]=="aux") {
+							document.getElementById('btnAuto').disabled = false;
+							document.getElementById('btnManual').disabled = false;
+							document.getElementById('btnAcw').disabled = false;
+							document.getElementById('btnAux').disabled = true;								
+						}
+						// determine talk state
+						if (jsonObj["talkstate"]=="idle") {
+							myAgentIdle = true; 
+						} else if (jsonObj["talkstate"]=="call") {
+							myAgentIdle = false;
+						}
+					}
+				} else if (id==MSGID_CHANGEAUTO) {
+					if (jsonObj["result"]=='success') {
+						document.getElementById('btnAuto').disabled = true;
+						document.getElementById('btnManual').disabled = false;
+						document.getElementById('btnAcw').disabled = false;
+						document.getElementById('btnAux').disabled = false;							
+					}
+				} else if (id==MSGID_CHANGEMANUAL) {
+					if (jsonObj["result"]=='success') {
+						document.getElementById('btnAuto').disabled = false;
+						document.getElementById('btnManual').disabled = true;
+						document.getElementById('btnAcw').disabled = false;
+						document.getElementById('btnAux').disabled = false;						
+					}			
+				} else if (id==MSGID_CHANGEACW) {
+					if (jsonObj["result"]=='success') {
+						document.getElementById('btnAuto').disabled = false;
+						document.getElementById('btnManual').disabled = false;
+						document.getElementById('btnAcw').disabled = true;
+						document.getElementById('btnAux').disabled = false;						
+					}				
+				} else if (id==MSGID_CHANGEAUX) {
+					if (jsonObj["result"]=='success') {
+						document.getElementById('btnAuto').disabled = false;
+						document.getElementById('btnManual').disabled = false;
+						document.getElementById('btnAcw').disabled = false;
+						document.getElementById('btnAux').disabled = true;						
+					}				
+				} else {
+					if (jsonObj["result"]=="error") {
+						alert(jsonObj["error"]);
+					}				
+				} 
+			} else if (jsonObj["msgtype"]=='event') {
+				if (jsonObj["eventtype"]=='offer') {
+					// inbound screen pop 
+					if (jsonObj["origcalling"]) {
+						sforce.interaction.searchAndScreenPop(jsonObj["origcalling"], '', 'inbound', searchAndScreenPopCallback);
+					} else {
+						sforce.interaction.searchAndScreenPop(jsonObj["calling"], '', 'inbound', searchAndScreenPopCallback);
+					}					
+				} else if (jsonObj["eventtype"]=='disconnect') {
+					if (jsonObj["releasing"]==myExtension) {
+						webSocket.send(JSON.stringify({
+							id: MSGID_QUERYAGENTSTATE, 
+							request: "queryagentstate",
+							extension: myExtension
+						}));					
+					}
+				} else if (jsonObj["eventtype"]=='idle') {
+					myAgentIdle = true;
+				}
+			}
+
+		}
+		// Callback of WebSocket onError 
+		function onWebSocketError(evt) {
+			if (wsUriCurrent != wsUriB) {
+				// try server B
+				connectCtiSVRB();
+			} else {
+				alert('SoftPhone connect to CTI failed.');
+			}
+		}			
+		// Invokes API changeAuto
+		function changeAUTO() {
+			if (myAgentId) {
+				webSocket.send(JSON.stringify({
+					id: MSGID_CHANGEAUTO,
+					request: "setstate",
+					extension: myExtension,
+					agentid: myAgentId,
+					passwd: myPasswd,
+					state: "auto"
+				}));	
+			}
+		}		
+		// Invokes API changeMANUAL
+		function changeMANUAL() {
+			if (myAgentId) {
+				webSocket.send(JSON.stringify({
+					id: MSGID_CHANGEMANUAL,
+					request: "setstate",
+					extension: myExtension,
+					agentid: myAgentId,
+					passwd: myPasswd,
+					state: "manual"
+				}));
+			}			
+		}			
+		// Invokes API changeACW
+		function changeACW() {
+			if (myAgentId) {
+				webSocket.send(JSON.stringify({
+					id: MSGID_CHANGEACW,
+					request: "setstate",
+					extension: myExtension,
+					agentid: myAgentId,
+					passwd: myPasswd,
+					state: "acw"
+				}));			
+			}			
+		}		
+		// Invokes API changeAUX
+		function changeAUX() {
+			if (myAgentId) {
+				var reason = document.getElementById('selReasonCode');
+				var code = reason.options[reason.selectedIndex].value;
+				webSocket.send(JSON.stringify({
+					id: MSGID_CHANGEAUX,
+					request: "setstate",
+					extension: myExtension,
+					agentid: myAgentId,
+					passwd: myPasswd,
+					state: "aux",
+					reasoncode: code
+				}));			
+			}				
+		}		
+		function pressDigitOne() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "1"
+			}));				
+		}			
+		function pressDigitTwo() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "2"
+			}));			
+		}			
+		function pressDigitThree() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "3"
+			}));			
+		}			
+		function pressDigitFour() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "4"
+			}));			
+		}			
+		function pressDigitFive() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "5"
+			}));			
+		}			
+		function pressDigitSix() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "6"
+			}));			
+		}
+		function pressDigitSeven() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "7"
+			}));			
+		}			
+		function pressDigitEight() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "8"
+			}));			
+		}			
+		function pressDigitNine() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "9"
+			}));			
+		}
+		function pressDigitAsterisk() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "*"
+			}));			
+		}			
+		function pressDigitZero() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "0"
+			}));			
+		}			
+		function pressDigitPound() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_DTMF,
+				request: "dtmf",
+				extension: myExtension,
+				dtmf: "#"
+			}));			
+		}	
+		function pressHold() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_HOLD,
+				request: "hold",
+				extension: myExtension
+			}));		
+		}
+		function pressHangup() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_HANGUP,
+				request: "hangup",
+				extension: myExtension
+			}));		
+		}
+		function pressRetrieve() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_RETRIEVE,
+				request: "retrieve",
+				extension: myExtension
+			}));			
+		}
+		function pressDrop() {
+			var phoneNumber = $('#phoneNumberForm').find('[id=txtPhoneNumber]').val();
+			if (phoneNumber) {
+				webSocket.send(JSON.stringify({
+					id: MSGID_DROPPARTY,
+					request: "dropparty",
+					extension: myExtension,
+					party: phoneNumber
+				}));		
+			}		
+		}
+		function pressConsultation() {
+			var phoneNumber = $('#phoneNumberForm').find('[id=txtPhoneNumber]').val();
+			if (phoneNumber) {
+				webSocket.send(JSON.stringify({
+					id: MSGID_CONSULTATION,
+					request: "consultation",
+					extension: myExtension,
+					destination: phoneNumber
+				}));		
+			}
+		}
+		function pressReconnect() {
+			webSocket.send(JSON.stringify({
+				id: MSGID_RECONNECT,
+				request: "reconnect",
+				extension: myExtension
+			}));		
+		}
+		function pressTransfer() {
+			var phoneNumber = $('#phoneNumberForm').find('[id=txtPhoneNumber]').val();
+			webSocket.send(JSON.stringify({
+				id: MSGID_TRANSFER,
+				request: "transfer",
+				extension: myExtension,
+				destination: phoneNumber
+			}));			
+		}
+		function pressConference() {
+			var phoneNumber = $('#phoneNumberForm').find('[id=txtPhoneNumber]').val();
+			webSocket.send(JSON.stringify({
+				id: MSGID_CONFERENCE,
+				request: "conference",
+				extension: myExtension,
+				destination: phoneNumber
+			}));			
+		}
+		// Callback of API method: getCallCenterSettings
+		var getCallCenterSettingsCallback = function (response) {
+			// Result returns call center settings as a JSON string.
+			if (response.result) {
+				configString = response.result;
+				connectCtiSVRA();
+			} else {
+				alert('Error retrieving call center settings ' + response.error);
+			}
+		};
+		// Callback of API method: searchAndScreenPop
+		var searchAndScreenPopCallback = function (response) {
+			// Result returns call center settings as a JSON string.
+			if (response.result) {
+			} else {
+				alert('Error search and screenpop ' + response.error);
+			}
+		};	
+		var enableClickToDialCallback = function (response) {
+			if (response.result) {
+			} else {
+				alert('Click to dial was not enabled.');
+			}		
+		}
+		var onClickToDialCallback = function (response) {
+			if (response.result) {
+				var prefix;			
+				var jsonObj = JSON.parse(response.result);
+				var number = jsonObj["number"];
+				if (number.indexOf("+")>=0) {
+					prefix = outsidePrefix + internationalPrefix; 
+				} else if (number.indexOf("(")>=0 && number.indexOf(")")>=0) {
+					prefix = outsidePrefix + longDistPrefix; 
+				} 
+				number = number.replace(/\+/g, '');
+				number = number.replace(/\s+/g, '');
+				number = number.replace(/\(/g, '');
+				number = number.replace(/\)/g, '');
+				number = number.replace(/-/g, '');
+				if (prefix) {
+					number = prefix + number;
+				} else {
+					if (number.length > myExtension.length) {
+						number = outsidePrefix + number; 
+					}
+				}
+				webSocket.send(JSON.stringify({
+					id: MSGID_MAKECALL,
+					request: "makecall",
+					extension: myExtension,
+					destination: number
+				}));
+			}		
+		}
+		// the page is loaded
+		window.addEventListener("load", sforce.interaction.cti.getCallCenterSettings(getCallCenterSettingsCallback), false);
+	</script>
+</head>
+<body>
+	<script src="libs/jquery/jquery-1.11.3.js"></script>
+    <script type="text/javascript">
+	$(function() { //shorthand document.ready function
+		$('#btnSubmitLogin').click(function(e) {
+			e.preventDefault();  //prevent form from submitting
+			myAgentId = $('#loginForm').find('[id=txtAgentId]').val();
+			myPasswd = $('#loginForm').find('[id=txtPasswd]').val();
+			if (myAgentId) {
+				webSocket.send(JSON.stringify({
+					id: MSGID_LOGIN,
+					request: "login",
+					extension: myExtension,
+					agentid: myAgentId,
+					passwd: myPasswd
+				}));
+			}			
+		});
+		$('#btnSubmitLogout').click(function(e) {
+			e.preventDefault();  //prevent form from submitting
+			if (myAgentId) {
+				webSocket.send(JSON.stringify({
+					id: MSGID_LOGOUT,
+					request: "logout",
+					extension: myExtension,
+					agentid: myAgentId
+				}));
+			}
+		});	
+		$('#btnSubmitCall').click(function(e) {
+			e.preventDefault();  //prevent form from submitting
+			var phoneNumber = $('#phoneNumberForm').find('[id=txtPhoneNumber]').val();
+			if (phoneNumber) {
+				webSocket.send(JSON.stringify({
+					id: MSGID_MAKECALL,
+					request: "makecall",
+					extension: myExtension,
+					destination: phoneNumber
+				}));			
+			}
+		});		
+	
+		$('#btnSubmitAnswer').click(function(e) {
+			e.preventDefault();  //prevent form from submitting
+			webSocket.send(JSON.stringify({
+				id: MSGID_ANSWER,
+				request: "answer",
+				extension: myExtension
+			}));				
+		});					
+	});
+    </script>
+	<button onclick="changeAUTO();" id="btnAuto" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >A</button>
+	<button onclick="changeMANUAL();" id="btnManual" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >M</button>
+	<button onclick="changeACW();" id="btnAcw" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >W</button>	
+	<button onclick="changeAUX();" id="btnAux" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >X</button>
+	<select id="selReasonCode" style="width:30px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<option value="0">0</option>	
+		<option value="1">1</option>
+		<option value="2">2</option>
+		<option value="3">3</option>
+		<option value="4">4</option>
+		<option value="5">5</option>
+		<option value="6">6</option>
+		<option value="7">7</option>
+		<option value="8">8</option>
+		<option value="9">9</option>
+	</select>		
+	<form name="loginForm" id="loginForm" >
+	<label for="txtAgentId" style="position:relative;vertical-align: middle;width:40px;height:12px;font-family:Arial;font-size:12px; display: inline-block;">AgentId</label>
+	<input tabindex=1 type="text" id="txtAgentId" name="txtAgentId" style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />
+	<input tabindex=3 type="submit" id="btnSubmitLogin" value="Login" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" /></br>
+	<label for="txtPasswd" style="position:relative;vertical-align: middle;width:40px;height:12px;font-family:Arial;font-size:12px;display: inline-block;">Passwd</label>
+	<input tabindex=2 type="password" id="txtPasswd" name="txtPasswd" style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />
+	<input tabindex=4 type="submit" id="btnSubmitLogout" value="Logout" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" />
+	</form>
+
+	<form name="phoneNumberForm" id="phoneNumberForm" style="border-width:thin;" >
+	<input type="submit" id="btnSubmitAnswer" value="Ans" style="position:relative;vertical-align: middle;width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" />		
+	<input type="text" id="txtPhoneNumber" name="txtPhoneNumber" style="width:68px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />
+	<input type="submit" id="btnSubmitCall" value="Call" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" /></br>
+	</form>	
+	
+	<button onclick="pressHold();" id="btnHold" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >HOLD</button>
+	<button onclick="pressDigitOne();" id="btnDigitOne" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >1</button>
+	<button onclick="pressDigitTwo();" id="btnDigitTwo" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >2</button>
+	<button onclick="pressDigitThree();" id="btnDigitThree" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >3</button>	
+	<button onclick="pressHangup();" id="btnHangup" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >HUP</button>	
+	
+	<button onclick="pressRetrieve();" id="btnRetrieve" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >RETR</button>
+	<button onclick="pressDigitFour();" id="btnDigitFour" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >4</button>
+	<button onclick="pressDigitFive();" id="btnDigitFive" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >5</button>
+	<button onclick="pressDigitSix();" id="btnDigitSix" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >6</button>
+	<button onclick="pressDrop();" id="btnDrop" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >DROP</button>	
+	
+	<button onclick="pressConsultation();" id="btnConsultation" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >CONS</button>
+	<button onclick="pressDigitSeven();" id="btnDigitSeven" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >7</button>
+	<button onclick="pressDigitEight();" id="btnDigitEight" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >8</button>
+	<button onclick="pressDigitNine();" id="btnDigitNine" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >9</button>	
+	<button onclick="pressReconnect();" id="btnReconnect" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >RENN</button>	
+	
+	<button onclick="pressTransfer();" id="btnTransfer" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >TRNF</button>
+	<button onclick="pressDigitAsterisk();" id="btnDigitAsterisk" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >*</button>
+	<button onclick="pressDigitZero();" id="btnDigitZero" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >0</button>
+	<button onclick="pressDigitPound();" id="btnDigitPound" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >#</button>	
+	<button onclick="pressConference();" id="btnConference" style="width:40px;height:22px;font-family:Arial;font-size:12px;padding:0;" >CONF</button>
+	
+</body>
+</html>
+
