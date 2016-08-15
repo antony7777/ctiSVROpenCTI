@@ -528,11 +528,10 @@
 		});					
 	});
     </script>
-	
-	<button onclick="changeAUTO();" id="btnAuto" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >A</button>
-	<button onclick="changeMANUAL();" id="btnManual" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >M</button>
-	<button onclick="changeACW();" id="btnAcw" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >W</button>	
-	<button onclick="changeAUX();" id="btnAux" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" >X</button>
+	<button onclick="changeAUTO();" id="btnAuto" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>A</b></button>
+	<button onclick="changeMANUAL();" id="btnManual" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>M</b></button>
+	<button onclick="changeACW();" id="btnAcw" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>W</b></button>	
+	<button onclick="changeAUX();" id="btnAux" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>X</b></button>
 	<select id="selReasonCode" style="width:31px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
 		<option value="0">0</option>	
 		<option value="1">1</option>
@@ -548,30 +547,42 @@
 	<form name="loginForm" id="loginForm" >
 	<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Agent" src="imgs/user.png">
 	<input tabindex=1 type="text" id="txtAgentId" name="txtAgentId" style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />
-	<input tabindex=3 type="submit" id="btnSubmitLogin" value="Login" style="width:45px;height:22px;font-family:Arial;font-size:12px;padding:0;" /></br>
+	<button id="btnSubmitLogin" style="width:45px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/login.png"></button></br>		
 	<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Passwd" src="imgs/password.png">
-	<input tabindex=2 type="password" id="txtPasswd" name="txtPasswd" style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />
-	<input tabindex=4 type="submit" id="btnSubmitLogout" value="Logout" style="width:45px;height:22px;font-family:Arial;font-size:12px;padding:0;" />
+	<input tabindex=2 type="password" id="txtPasswd" name="txtPasswd" style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />	
+	<button id="btnSubmitLogout" style="width:45px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/logout.png"></button>	
 	</form>
 
 	<form name="phoneNumberForm" id="phoneNumberForm" style="border-width:thin;" >
 	<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Tel" src="imgs/tel.png">
 	<input type="text" id="txtPhoneNumber" name="txtPhoneNumber" style="width:100px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" /><br>
-	<input type="submit" id="btnSubmitAnswer" value="Answer" style="position:relative;vertical-align: middle;width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" />		
-	<input type="submit" id="btnSubmitCall" value="Call" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" /></br>
+	<button id="btnSubmitAnswer" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/answer.png"></button>
+	<button id="btnSubmitCall" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/call.png"></button>
 	</form>	
 	
-	<button onclick="pressHold();" id="btnHold" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Hold</button>
-	<button onclick="pressHangup();" id="btnHangup" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Hangup</button><br>	
+	<button onclick="pressHold();" id="btnHold" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/hold.png"></button>
+	<button onclick="pressHangup();" id="btnHangup" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/hangup.png"></button><br>	
 	
-	<button onclick="pressRetrieve();" id="btnRetrieve" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Retrieve</button>
-	<button onclick="pressDrop();" id="btnDrop" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Drop</button><br>	
+	<button onclick="pressRetrieve();" id="btnRetrieve" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/retrieve.png"></button>
+	<button onclick="pressDrop();" id="btnDrop" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/drop.png"></button><br>	
 	
-	<button onclick="pressConsultation();" id="btnConsultation" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Consult</button>
-	<button onclick="pressReconnect();" id="btnReconnect" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Reconnect</button><br>	
+	<button onclick="pressConsultation();" id="btnConsultation" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/consultation.png"></button>
+	<button onclick="pressReconnect();" id="btnReconnect" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/reconnect.png"></button><br>
 	
-	<button onclick="pressTransfer();" id="btnTransfer" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Trnf</button>
-	<button onclick="pressConference();" id="btnConference" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >Conf</button>
+	<button onclick="pressTransfer();" id="btnTransfer" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/transfer.png"></button>
+	<button onclick="pressConference();" id="btnConference" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/conference.png"></button>
 	
 </body>
 </html>
