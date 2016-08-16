@@ -1,4 +1,4 @@
-<html>
+
 <head>
 	<!-- Imports Open CTI JavaScript library. It should point to a valid Salesforce domain. -->
 	<script src="https://ap1.salesforce.com/support/api/25.0/interaction.js"></script>
@@ -21,21 +21,23 @@
 		const MSGID_LOGIN = 3;
 		const MSGID_LOGOUT = 4; 
 		const MSGID_QUERYAGENTSTATE = 5;
-		const MSGID_CHANGEAUTO = 6;
-		const MSGID_CHANGEMANUAL = 7; 
-		const MSGID_CHANGEACW = 8;
-		const MSGID_CHANGEAUX = 9;
-		const MSGID_MAKECALL = 10; 
-		const MSGID_ANSWER = 11;
-		const MSGID_CONFERENCE = 12; 
-		const MSGID_TRANSFER = 13; 
-		const MSGID_RECONNECT = 14; 
-		const MSGID_CONSULTATION = 15; 
-		const MSGID_DROPPARTY = 16; 
-		const MSGID_RETRIEVE = 17;
-		const MSGID_HANGUP = 18;
-		const MSGID_HOLD = 19; 
-		const MSGID_DTMF = 20;
+		const MSGID_SNAPSHOT = 6; 
+		const MSGID_USERDATAALERT = 7; 
+		const MSGID_CHANGEAUTO = 8;
+		const MSGID_CHANGEMANUAL = 9; 
+		const MSGID_CHANGEACW = 10;
+		const MSGID_CHANGEAUX = 11;
+		const MSGID_MAKECALL = 12; 
+		const MSGID_ANSWER = 13;
+		const MSGID_CONFERENCE = 14; 
+		const MSGID_TRANSFER = 15; 
+		const MSGID_RECONNECT = 16; 
+		const MSGID_CONSULTATION = 17; 
+		const MSGID_DROPPARTY = 18; 
+		const MSGID_RETRIEVE = 19;
+		const MSGID_HANGUP = 20;
+		const MSGID_HOLD = 21; 
+		const MSGID_DTMF = 22;
 		// Connect to ctiSVR using WebSocket interface 
 		function connectCtiSVRA() {
 			if (configString) {
@@ -128,7 +130,7 @@
 							document.getElementById('btnSubmitLogin').disabled = true;
 							document.getElementById('btnSubmitLogout').disabled = false;
 							document.getElementById('txtAgentId').disabled = true;
-							document.getElementById('txtPasswd').disabled = true;
+							document.getElementById('txtPasswd').disabled = true;	
 							webSocket.send(JSON.stringify({
 								id: MSGID_QUERYAGENTSTATE, 
 								request: "queryagentstate",
@@ -143,8 +145,12 @@
 							document.getElementById('btnManual').disabled = true;
 							document.getElementById('btnAcw').disabled = true;
 							document.getElementById('btnAux').disabled = true;						
-							
-						}
+							webSocket.send(JSON.stringify({
+								id: MSGID_SNAPSHOT,
+								request: "snapshot",
+								extension: myExtension
+							}));							
+						}							
 						// Register Click to Dial Callback 
 						sforce.interaction.cti.onClickToDial(onClickToDialCallback);
 						// Enable Click to Dial 
@@ -229,8 +235,38 @@
 							myAgentIdle = true; 
 						} else if (jsonObj["talkstate"]=="call") {
 							myAgentIdle = false;
+							webSocket.send(JSON.stringify({
+								id: MSGID_USERDATAALERT,
+								request: "userdata",
+								extension: myExtension,
+								type: "alert"
+							}));							
 						}
 					}
+				} else if (id==MSGID_SNAPSHOT) {
+					if (jsonObj["result"]=='success') {
+						if (jsonObj["numcall"] > 0) {
+							myAgentIdle = false;
+							webSocket.send(JSON.stringify({
+								id: MSGID_USERDATAALERT,
+								request: "userdata",
+								extension: myExtension,
+								type: "alert"
+							}));						
+						} else {
+							myAgentIdle = true; 
+						}
+					}
+				} else if (id==MSGID_USERDATAALERT) {
+					if (jsonObj["result"]=='success') {
+						if (jsonObj["cli"]) {
+							document.getElementById('txtCLI').value = jsonObj["cli"]; 
+							document.getElementById('txtDNIS').value = jsonObj["dnis"]; 
+						} else {
+							document.getElementById('txtCLI').value = jsonObj["calling"]; 
+							document.getElementById('txtDNIS').value = jsonObj["called"]; 
+						}	
+					}					
 				} else if (id==MSGID_CHANGEAUTO) {
 					if (jsonObj["result"]=='success') {
 						document.getElementById('btnAuto').disabled = true;
@@ -268,20 +304,23 @@
 				if (jsonObj["eventtype"]=='offer') {
 					// inbound screen pop 
 					if (jsonObj["origcalling"]) {
+						document.getElementById('txtCLI').value = jsonObj["origcalling"]; 
+						document.getElementById('txtDNIS').value = jsonObj["origcalled"]; 
 						sforce.interaction.searchAndScreenPop(jsonObj["origcalling"], '', 'inbound', searchAndScreenPopCallback);
 					} else {
+						document.getElementById('txtCLI').value = jsonObj["calling"]; 
+						document.getElementById('txtDNIS').value = jsonObj["called"]; 
 						sforce.interaction.searchAndScreenPop(jsonObj["calling"], '', 'inbound', searchAndScreenPopCallback);
 					}					
-				} else if (jsonObj["eventtype"]=='disconnect') {
-					if (jsonObj["releasing"]==myExtension) {
-						webSocket.send(JSON.stringify({
-							id: MSGID_QUERYAGENTSTATE, 
-							request: "queryagentstate",
-							extension: myExtension
-						}));					
-					}
 				} else if (jsonObj["eventtype"]=='idle') {
+					document.getElementById('txtCLI').value = ""; 
+					document.getElementById('txtDNIS').value = ""; 				
 					myAgentIdle = true;
+					webSocket.send(JSON.stringify({
+						id: MSGID_QUERYAGENTSTATE, 
+						request: "queryagentstate",
+						extension: myExtension
+					}));						
 				}
 			}
 
@@ -528,62 +567,91 @@
 		});					
 	});
     </script>
-	<button onclick="changeAUTO();" id="btnAuto" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>A</b></button>
-	<button onclick="changeMANUAL();" id="btnManual" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>M</b></button>
-	<button onclick="changeACW();" id="btnAcw" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>W</b></button>	
-	<button onclick="changeAUX();" id="btnAux" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>X</b></button>
-	<select id="selReasonCode" style="width:31px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<option value="0">0</option>	
-		<option value="1">1</option>
-		<option value="2">2</option>
-		<option value="3">3</option>
-		<option value="4">4</option>
-		<option value="5">5</option>
-		<option value="6">6</option>
-		<option value="7">7</option>
-		<option value="8">8</option>
-		<option value="9">9</option>
-	</select>		
-	<form name="loginForm" id="loginForm" >
-	<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Agent" src="imgs/user.png">
-	<input tabindex=1 type="text" id="txtAgentId" name="txtAgentId" style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />
-	<button id="btnSubmitLogin" style="width:45px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/login.png"></button></br>		
-	<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Passwd" src="imgs/password.png">
-	<input tabindex=2 type="password" id="txtPasswd" name="txtPasswd" style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />	
-	<button id="btnSubmitLogout" style="width:45px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/logout.png"></button>	
-	</form>
+	<table border="0" >
+	<!-- Display the CLI and DNIS -->
+	<tr>
+	<!-- Adjust the padding left if the Softphone is not fit for the browser -->
+	<td style="padding-left: 20px;">
+		<input type="text" id="txtCLI" 
+			style="background-color:rgba(0, 0, 0, 0);border:none;width:127px;height:16px;font-family:Arial;font-size:10px;text-align:center" disabled/><br>	
+		<input type="text" id="txtDNIS" 
+			style="background-color:rgba(0, 0, 0, 0);border:none;width:127px;height:16px;font-family:Arial;font-size:10px;text-align:center" disabled/><br>
+	</td>
+	</tr>
+	
+	<!-- The main Softphone is here -->
+	<tr>
+	<!-- Adjust the padding left if the Softphone is not fit for the browser -->
+	<td style="padding-left: 20px;">
+		<!-- Display AUTO, MANUAL, ACW and AUX buttons -->
+		<button onclick="changeAUTO();" id="btnAuto" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>A</b></button>
+		<button onclick="changeMANUAL();" id="btnManual" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>M</b></button>
+		<button onclick="changeACW();" id="btnAcw" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>W</b></button>	
+		<button onclick="changeAUX();" id="btnAux" style="width:20px;height:22px;font-family:Arial;font-size:12px;padding:0;" ><b>X</b></button>
+		<select id="selReasonCode" style="width:31px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<option value="0">0</option>	
+			<option value="1">1</option>
+			<option value="2">2</option>
+			<option value="3">3</option>
+			<option value="4">4</option>
+			<option value="5">5</option>
+			<option value="6">6</option>
+			<option value="7">7</option>
+			<option value="8">8</option>
+			<option value="9">9</option>
+		</select>
+		
+		<!-- Display the Login form -->
+		<form name="loginForm" id="loginForm" >
+		<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Agent" src="imgs/user.png">
+		<input tabindex=1 type="text" id="txtAgentId" name="txtAgentId" 
+			style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />
+		<button id="btnSubmitLogin" style="width:45px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/login.png"></button></br>		
+		<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Passwd" src="imgs/password.png">
+		<input tabindex=2 type="password" id="txtPasswd" name="txtPasswd" 
+			style="width:50px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" />	
+		<button id="btnSubmitLogout" style="width:45px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/logout.png"></button>	
+		</form>
 
-	<form name="phoneNumberForm" id="phoneNumberForm" style="border-width:thin;" >
-	<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Tel" src="imgs/tel.png">
-	<input type="text" id="txtPhoneNumber" name="txtPhoneNumber" style="width:100px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" /><br>
-	<button id="btnSubmitAnswer" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/answer.png"></button>
-	<button id="btnSubmitCall" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/call.png"></button>
-	</form>	
-	
-	<button onclick="pressHold();" id="btnHold" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/hold.png"></button>
-	<button onclick="pressHangup();" id="btnHangup" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/hangup.png"></button><br>	
-	
-	<button onclick="pressRetrieve();" id="btnRetrieve" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/retrieve.png"></button>
-	<button onclick="pressDrop();" id="btnDrop" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/drop.png"></button><br>	
-	
-	<button onclick="pressConsultation();" id="btnConsultation" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/consultation.png"></button>
-	<button onclick="pressReconnect();" id="btnReconnect" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/reconnect.png"></button><br>
-	
-	<button onclick="pressTransfer();" id="btnTransfer" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/transfer.png"></button>
-	<button onclick="pressConference();" id="btnConference" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
-		<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/conference.png"></button>
-	
+		<!-- Display the Phone number form -->
+		<form name="phoneNumberForm" id="phoneNumberForm" style="border-width:thin;" >
+		<img style="position:relative;vertical-align: middle; width: 24px; height: 24px;" alt="Tel" src="imgs/tel.png">
+		<input type="text" id="txtPhoneNumber" name="txtPhoneNumber" 
+			style="width:100px;height:22px;font-family:Arial;font-size:12px;padding:0;border:1px solid #696969;" /><br>
+		<button id="btnSubmitAnswer" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/answer.png"></button>
+		<button id="btnSubmitCall" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/call.png"></button>
+		</form>	
+		
+		<!-- The 1st row of function buttons -->
+		<button onclick="pressHold();" id="btnHold" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/hold.png"></button>
+		<button onclick="pressHangup();" id="btnHangup" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/hangup.png"></button><br>	
+		
+		<!-- The 2nd row of function buttons -->
+		<button onclick="pressRetrieve();" id="btnRetrieve" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/retrieve.png"></button>
+		<button onclick="pressDrop();" id="btnDrop" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/drop.png"></button><br>	
+		
+		<!-- The 3rd row of function buttons -->
+		<button onclick="pressConsultation();" id="btnConsultation" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/consultation.png"></button>
+		<button onclick="pressReconnect();" id="btnReconnect" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/reconnect.png"></button><br>
+		
+		<!-- The 4th row of function buttons -->
+		<button onclick="pressTransfer();" id="btnTransfer" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/transfer.png"></button>
+		<button onclick="pressConference();" id="btnConference" style="width:62px;height:22px;font-family:Arial;font-size:12px;padding:0;" >
+			<img style="position:relative;vertical-align: middle; width: 16px; height: 16px;" src="imgs/conference.png"></button>
+	</td>
+	</tr>
+	</table>
 </body>
 </html>
 
