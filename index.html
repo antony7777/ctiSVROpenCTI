@@ -230,6 +230,8 @@
 							document.getElementById('btnAcw').disabled = false;
 							document.getElementById('btnAux').disabled = true;								
 						}
+						var reason = document.getElementById('selReasonCode');
+						reason.selectedIndex = parseInt(jsonObj["reasoncode"]);
 						// determine talk state
 						if (jsonObj["talkstate"]=="idle") {
 							myAgentIdle = true; 
